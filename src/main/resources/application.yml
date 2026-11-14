@@ -19,6 +19,21 @@ spring:
     locations: classpath:db/migration
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all                  # wait for all in-sync replicas: no silent event loss
+      properties:
+        enable.idempotence: true # no duplicates on producer retries
+        max.block.ms: 5000       # fail fast if Kafka is unreachable
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 10000 # max wait for Kafka's ack before the admin request fails
+
+accredit:
+  kafka:
+    topic:
+      # {env}.{company}.{service}.{data}.{version}
+      name: ${ENV:dev}.willow-wealth.${spring.application.name}.accreditation-events.v1
+      partitions: 3
+      replicas: 1                # single local broker; 3 in production
 
 server:
   port: 9999
