@@ -72,7 +72,7 @@ With tests:
 - Connection settings can be overridden with environment variables:
   - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`
   - `KAFKA_BOOTSTRAP_SERVERS`
-  - `ENV` (default `dev`): prefix of the Kafka topic name, e.g. `dev.willow-wealth.accredit-service.accreditation-events.v1`
+  - `ENV` (default: `dev`)
 
 ---
 
@@ -84,12 +84,12 @@ With tests:
 - **Command side decides, projector records:**
   - The admin endpoints validate the request and status rules before publishing an event. Nothing is published if validation fails.
   - The projector trusts published events and applies them to MySQL without re-checking the rules; othwrwise a valid event might be rejected due to timing.
-- **Document is validated, not stored:** the `document` in the create request is validated but not stored or put on the event. The spec only requires events to capture the state change and timestamp. In production the file would go to object storage (e.g. S3), with the event carrying a reference to it.
+- **Document is validated, not stored:** the `document` in the create request is validated but not stored or put on the event. The spec only requires events to capture the state change and timestamp. In PROD the file would go to object storage (e.g. S3), with the event carrying a reference to it.
 - **Timestamps in UTC:** Hibernate stores and reads timestamps in UTC, so the 30-day expiry doesn't depend on the host's timezone.
 
 ## Limitations
 
-- **Credentials in git:** the DB credentials in `docker-compose.yml` and `application.yml` are local dev defaults only. In production they wouldn't be committed to git. They'd be stored in a secrets manager such as HashiCorp Vault or AWS Secrets Manager, and injected at deploy time through the Helm chart as part of the CD pipeline (e.g. ArgoCD or Jenkins).
+- **Credentials in git:** the DB credentials in `docker-compose.yml` and `application.yml` are local dev defaults only. In PROD they wouldn't be committed to git. They'd be stored in a secrets manager such as HashiCorp Vault or AWS Secrets Manager, and injected at deploy time through the Helm chart as part of the CD pipeline (e.g. ArgoCD or Jenkins).
 - **No high-level design (HLD):** for a real project an HLD might be written first, weighing up the options for:
   - How data flows between the components
   - The tech stack
@@ -97,6 +97,7 @@ With tests:
   - Caching (in-memory or distributed)
   - Metrics and alerting
   - The exact flavour of CQRS (e.g. shared vs separate write store, event sourcing or not)
+- **No dead-letter topic:** an event the projector can't apply (malformed, or still failing after 2 retries) is logged and skipped so it can't block the partition. In PROD it would go to a dead-letter topic, with an alert, for investigation and replay.
 - **Synchronous Kafka publishing:** admin requests block until Kafka acknowledges the event. This was the quickest reliable option for this exercise, since the admin only gets a success response once the event is safely stored.
-  - Quick fix: enable Java 21 virtual threads (`spring.threads.virtual.enabled: true`) so blocked requests are cheap.
-  - Permanent, scalable fix: the transactional outbox pattern. The event is saved to a DB table in the same transaction, and a relay publishes it to Kafka asynchronously.
+  - Quick fix: enable Java 21 virtual threads (`spring.threads.virtual.enabled: true`)
+  - More scalable fix: the transactional outbox pattern. The event is saved to a DB table in the same transaction, and a relay publishes it to Kafka asynchronously.
