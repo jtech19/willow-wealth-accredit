@@ -80,7 +80,18 @@ With tests:
 - **DB-level enum checks:** the `CHECK` constraints on `accreditation_type` and `status` are an extra safety net, not a requirement. The read model has only one writer (the Kafka projector), which already uses Java enums. Downsides:
   - Adding a new enum value needs a Flyway migration as well as the code change.
   - If the two get out of sync, inserts fail at runtime.
+- **Command side decides, projector records:**
+  - The admin endpoints validate the request and status rules before publishing an event. Nothing is published if validation fails.
+  - The projector trusts published events and applies them to MySQL without re-checking the rules; othwrwise a valid event might be rejected due to timing.
+- **Timestamps in UTC:** Hibernate stores and reads timestamps in UTC, so the 30-day expiry doesn't depend on the host's timezone.
 
 ## Limitations
 
 - **Credentials in git:** the DB credentials in `docker-compose.yml` and `application.yml` are local dev defaults only. In production they wouldn't be committed to git. They'd be stored in a secrets manager such as HashiCorp Vault or AWS Secrets Manager, and injected at deploy time through the Helm chart as part of the CD pipeline (e.g. ArgoCD or Jenkins).
+- **No high-level design (HLD):** for a real project an HLD might be written first, weighing up the options for:
+  - How data flows between the components
+  - The tech stack
+  - Expected load and scaling
+  - Caching (in-memory or distributed)
+  - Metrics and alerting
+  - The exact flavour of CQRS (e.g. shared vs separate write store, event sourcing or not)

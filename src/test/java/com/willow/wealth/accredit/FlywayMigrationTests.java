@@ -1,5 +1,8 @@
 package com.willow.wealth.accredit;
 
+import static com.willow.wealth.accredit.fixtures.TestData.ACCREDITATION_ID;
+import static com.willow.wealth.accredit.fixtures.TestData.OTHER_ACCREDITATION_ID;
+import static com.willow.wealth.accredit.fixtures.TestData.USER_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -27,7 +30,7 @@ class FlywayMigrationTests {
 
 	@Test
 	void accreditationStatusTableIsCreated() {
-		jdbc.update(INSERT, "87bb6030-458e-11ed-b023-039b275a916a", "g8NlYJnk7zK9BlB1J2Ebjs0AkhCTpE1V",
+		jdbc.update(INSERT, ACCREDITATION_ID.toString(), USER_ID,
 				"BY_INCOME", "PENDING");
 
 		Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM accreditation_status", Integer.class);
@@ -36,7 +39,7 @@ class FlywayMigrationTests {
 
 	@Test
 	void invalidStatusIsRejected() {
-		assertThatThrownBy(() -> jdbc.update(INSERT, "c031a5da-d59a-4d35-b1f0-0f8324dcc156", "user-1",
+		assertThatThrownBy(() -> jdbc.update(INSERT, OTHER_ACCREDITATION_ID.toString(), USER_ID,
 				"BY_INCOME", "UNKNOWN"))
 			.isInstanceOf(DataAccessException.class)
 			.hasMessageContaining("ck_accreditation_status_status");
@@ -44,7 +47,7 @@ class FlywayMigrationTests {
 
 	@Test
 	void invalidAccreditationTypeIsRejected() {
-		assertThatThrownBy(() -> jdbc.update(INSERT, "c031a5da-d59a-4d35-b1f0-0f8324dcc156", "user-1",
+		assertThatThrownBy(() -> jdbc.update(INSERT, OTHER_ACCREDITATION_ID.toString(), USER_ID,
 				"BY_SALARY", "PENDING"))
 			.isInstanceOf(DataAccessException.class)
 			.hasMessageContaining("ck_accreditation_status_type");
