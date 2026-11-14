@@ -26,6 +26,11 @@ spring:
         max.block.ms: 5000       # fail fast if Kafka is unreachable
         request.timeout.ms: 5000
         delivery.timeout.ms: 10000 # max wait for Kafka's ack before the admin request fails
+    consumer:
+      auto-offset-reset: earliest  # new consumer group replays the whole topic
+    listener:
+      ack-mode: record             # commit each offset only after the event is applied to MySQL
+      concurrency: 3               # one consumer thread per partition
 
 accredit:
   kafka:
