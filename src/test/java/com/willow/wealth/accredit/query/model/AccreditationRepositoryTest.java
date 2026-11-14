@@ -67,10 +67,10 @@ class AccreditationRepositoryTest {
 		repository.save(anAccreditation().ofType(BY_NET_WORTH).build());
 		repository.save(anAccreditation().forUser(OTHER_USER_ID).build());
 
-		assertThat(repository.findByUserId(USER_ID))
+		assertThat(repository.findByUserIdOrderByCreatedAtAsc(USER_ID))
 			.hasSize(2)
 			.allSatisfy(a -> assertThat(a.getUserId()).isEqualTo(USER_ID));
-		assertThat(repository.findByUserId("unknown-user")).isEmpty();
+		assertThat(repository.findByUserIdOrderByCreatedAtAsc("unknown-user")).isEmpty();
 	}
 
 	@Test
