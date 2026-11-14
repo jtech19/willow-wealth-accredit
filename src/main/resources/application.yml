@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: accredit-service
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+server:
+  port: 9999
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
