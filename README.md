@@ -86,6 +86,8 @@ With tests:
   - The projector trusts published events and applies them to MySQL without re-checking the rules; othwrwise a valid event might be rejected due to timing.
 - **Document is validated, not stored:** the `document` in the create request is validated but not stored or put on the event. The spec only requires events to capture the state change and timestamp. In PROD the file would go to object storage (e.g. S3), with the event carrying a reference to it.
 - **Timestamps in UTC:** Hibernate stores and reads timestamps in UTC, so the 30-day expiry doesn't depend on the host's timezone.
+- **Unknown user returns an empty map:** there's no user registry, so `GET /user/{userId}/accreditation` returns `200` with empty `accreditation_statuses` rather than `404`.
+- **GET is eventually consistent:** it reads the projected read model, so a change made by an admin shows up once the projector has applied the event (normally milliseconds).
 
 ## Limitations
 

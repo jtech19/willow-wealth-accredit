@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AccreditationRepository extends JpaRepository<Accreditation, UUID> {
 
-	List<Accreditation> findByUserId(String userId);
+	List<Accreditation> findByUserIdOrderByCreatedAtAsc(String userId);
 
 	boolean existsByUserIdAndStatus(String userId, AccreditationStatus status);
 
