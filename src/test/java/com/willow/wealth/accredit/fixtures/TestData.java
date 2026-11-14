@@ -18,6 +18,13 @@ public final class TestData {
 
 	public static final UUID OTHER_ACCREDITATION_ID = UUID.fromString("c031a5da-d59a-4d35-b1f0-0f8324dcc156");
 
+	public static final String DOCUMENT_NAME = "2018.pdf";
+
+	public static final String DOCUMENT_MIME_TYPE = "application/pdf";
+
+	// From the spec; decodes to a JSON fragment, not a real PDF (content isn't checked against mime type).
+	public static final String DOCUMENT_CONTENT = "ICAiQC8qIjogWyJzcmMvKiJdCiAgICB9CiAgfQp9Cg==";
+
 	// Deterministic NOW timestamp
 	public static final Instant NOW = Instant.parse("2026-01-15T10:00:00Z");
 

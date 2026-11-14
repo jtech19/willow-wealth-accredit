@@ -9,7 +9,6 @@ import com.willow.wealth.accredit.event.AccreditationEvent;
 
 /**
  * Builds {@link AccreditationEvent}s with defaults.
- * Example: {@code aStatusChangedEvent().from(PENDING).to(CONFIRMED).build()}.
  */
 public final class AccreditationEventTestBuilder {
 
