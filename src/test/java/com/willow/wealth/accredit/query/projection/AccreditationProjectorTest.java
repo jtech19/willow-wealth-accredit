@@ -90,12 +90,30 @@ class AccreditationProjectorTest {
 	}
 
 	@Test
-	void olderStatusChangeIsIgnored() {
+	void statusChangeDecidedOnOutdatedStatusIsIgnored() {
 		apply(aCreatedEvent().build());
 		apply(aStatusChangedEvent().from(PENDING).to(CONFIRMED).occurredAt(hoursLater(2)).build());
 		apply(aStatusChangedEvent().from(PENDING).to(EXPIRED).occurredAt(hoursLater(1)).build());
 
 		assertThat(row().getStatus()).isEqualTo(CONFIRMED);
+	}
+
+	@Test
+	void laterEventWithEarlierTimestampIsStillApplied() {
+		apply(aCreatedEvent().build());
+		apply(aStatusChangedEvent().from(PENDING).to(CONFIRMED).occurredAt(hoursLater(2)).build());
+		apply(aStatusChangedEvent().from(CONFIRMED).to(EXPIRED).occurredAt(hoursLater(1)).build());
+
+		assertThat(row().getStatus()).isEqualTo(EXPIRED);
+	}
+
+	@Test
+	void selfTransitionDoesNotRefreshTimestamp() {
+		apply(aCreatedEvent().build());
+		apply(aStatusChangedEvent().from(PENDING).to(CONFIRMED).occurredAt(hoursLater(1)).build());
+		apply(aStatusChangedEvent().from(CONFIRMED).to(CONFIRMED).occurredAt(hoursLater(2)).build());
+
+		assertThat(row().getUpdatedAt()).isEqualTo(hoursLater(1));
 	}
 
 	@Test

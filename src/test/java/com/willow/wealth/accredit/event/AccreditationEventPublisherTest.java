@@ -13,6 +13,7 @@ import com.willow.wealth.accredit.config.AccreditKafkaProperties;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 
 /** Failure paths; the happy path is covered against real Kafka in AccreditationEventPublisherIntegrationTest. */
@@ -34,6 +35,16 @@ class AccreditationEventPublisherTest {
 	void failedSendIsReportedAsEventPublishException() {
 		when(kafkaTemplate.send(anyString(), anyString(), any()))
 			.thenReturn(CompletableFuture.failedFuture(new TimeoutException("broker unavailable")));
+
+		assertThatThrownBy(() -> publisher.publish(aCreatedEvent().build()))
+			.isInstanceOf(EventPublishException.class)
+			.hasMessageContaining("Failed to publish");
+	}
+
+	@Test
+	void sendThatThrowsStraightAwayIsReportedAsEventPublishException() {
+		when(kafkaTemplate.send(anyString(), anyString(), any()))
+			.thenThrow(new KafkaException("Send failed", new TimeoutException("broker unavailable")));
 
 		assertThatThrownBy(() -> publisher.publish(aCreatedEvent().build()))
 			.isInstanceOf(EventPublishException.class)

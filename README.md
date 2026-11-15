@@ -153,7 +153,7 @@ POST / PUT / expiry job ──> check MySQL ──> Kafka ──> projector ─�
   - If the two get out of sync, inserts fail at runtime.
 - **Command side decides, projector records:**
   - The admin endpoints validate the request and status rules before publishing an event. Nothing is published if validation fails.
-  - The projector trusts published events and applies them to MySQL without re-checking the rules; otherwise a valid event might be rejected due to timing.
+  - The projector applies an event only if its `previous_status` matches and the move is allowed, so duplicates, replays and out-of-date events are skipped. Order comes from Kafka, not from event timestamps.
 - **Document is validated, not stored:** the `document` in the create request is validated but not stored or put on the event. The spec only requires events to capture the state change and timestamp. In PROD the file would go to object storage (e.g. S3), with the event carrying a reference to it.
 - **Document checks:** `name`, `mime_type` and `content` are required,
   - `content` must be valid base64 of at most 10 MB
@@ -195,11 +195,13 @@ POST / PUT / expiry job ──> check MySQL ──> Kafka ──> projector ─�
 
 ## AI usage
 
-For this code test I made use of Claude AI. I used it to:
+I used Claude AI to:
   - clarify requirements from the interview spec sheet
   - verify high-level plan of how to split the work in feature branches where each deliverable is clear & understandable
   - generation of boilerplate code (like DTOs)
   - ensure at least 80-85% coverage of unit tests & IT tests
-  - draft the README based on assumptions I made & limitations I had due to time constraints & nature of this exercise being a code test
-One of the main points is that I drove the design decisions, after researching & reviewing the options & took decisions balancing time, scope of this service & readiness for future proofing 
+  - draft the README based on assumptions I made & limitations I had due to time constraints & nature of this service being a test
+
+One of the main points is that I drove the design decisions, after researching & reviewing the options & took decisions balancing time, scope of this service & readiness for future proofing. 
+
 It was also useful for weighing trade-offs, such as the CQRS consistency gaps and error-handling options, before committing to an approach.

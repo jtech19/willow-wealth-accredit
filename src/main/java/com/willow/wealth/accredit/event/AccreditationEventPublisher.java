@@ -40,7 +40,7 @@ public class AccreditationEventPublisher {
 			Thread.currentThread().interrupt();
 			throw new EventPublishException("Interrupted while publishing event for accreditation " + key, ex);
 		}
-		catch (ExecutionException ex) {
+		catch (ExecutionException | RuntimeException ex) {
 			throw new EventPublishException("Failed to publish event for accreditation " + key, ex);
 		}
 	}

@@ -74,6 +74,15 @@ class AccreditationRepositoryTest {
 	}
 
 	@Test
+	void userIdIsCaseSensitive() {
+		String sameIdOtherCase = USER_ID.toLowerCase();
+		repository.saveAndFlush(anAccreditation().build());
+
+		assertThat(repository.findByUserIdOrderByCreatedAtAsc(sameIdOtherCase)).isEmpty();
+		assertThat(repository.existsByUserIdAndStatus(sameIdOtherCase, PENDING)).isFalse();
+	}
+
+	@Test
 	void existsByUserIdAndStatusDetectsPendingRequest() {
 		repository.save(anAccreditation().withStatus(FAILED).build());
 
