@@ -97,6 +97,12 @@ With tests:
 - **GET is eventually consistent:** it reads the projected read model, so a change made by an admin shows up once the projector has applied the event (normally milliseconds).
 - **Finalize returns `200 OK`:** with the same `accreditation_id` body as create. 
   - `PENDING` isn't a valid `outcome` (`400`), an unknown id is `404`, and a transition the rules don't allow (e.g. from `FAILED`) is `409`.
+- **Error handling uses Spring's ProblemDetail (RFC 9457):**
+  - `400` names invalid or unknown fields
+  - Kafka down is `503` (safe to retry)
+  - Unexpected is `500` (details only in logs)
+  - Extends `ResponseEntityExceptionHandler` so Spring's own errors (`405`, `415`...) keep their status
+- **Events ignore unknown fields:** unlike the REST API, the Kafka consumer accepts events with extra fields, so a new event field doesn't break older consumers.
 
 ## Limitations
 

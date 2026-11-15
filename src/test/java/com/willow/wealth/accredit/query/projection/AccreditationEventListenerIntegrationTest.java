@@ -70,6 +70,28 @@ class AccreditationEventListenerIntegrationTest {
 		awaitStatus(id, PENDING);
 	}
 
+	@Test
+	void eventWithUnknownFieldIsStillProjected() throws Exception {
+		UUID id = UUID.randomUUID();
+
+		/* a newer producer may add fields; the REST API rejects unknown fields where they can be fixed, the consumer
+		must not, which makes it backward-compatible for event-driven systems */
+		sendRaw(id.toString(), """
+				{
+				  "event_id": "%s",
+				  "accreditation_id": "%s",
+				  "user_id": "user-1",
+				  "accreditation_type": "BY_INCOME",
+				  "previous_status": null,
+				  "status": "PENDING",
+				  "occurred_at": "2026-01-15T10:00:00Z",
+				  "added_in_v2": "ignored"
+				}
+				""".formatted(UUID.randomUUID(), id));
+
+		awaitStatus(id, PENDING);
+	}
+
 	private void awaitStatus(UUID id, AccreditationStatus expected) {
 		await().atMost(TIMEOUT).untilAsserted(() -> {
 			Optional<Accreditation> row = repository.findById(id);
