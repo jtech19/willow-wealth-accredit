@@ -11,9 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Applies accreditation events to the read model (DB).
- * Business rules are not re-checked here; the command side validated them
- * before publishing (see README assumptions).
+ * Applies accreditation events to the read model (DB)
  */
 @Slf4j
 @Service
@@ -36,10 +34,9 @@ public class AccreditationProjector {
 		}
 
 		Accreditation current = existing.get();
-		if (isAlreadyApplied(current, event)) {
-			log.info("Skipped event {} for accreditation {}: already applied or stale (current {} at {}, event {} at {})",
-					event.eventId(), event.accreditationId(), current.getStatus(), current.getUpdatedAt(),
-					event.status(), event.occurredAt());
+		if (!isApplicable(current, event)) {
+			log.info("Skipped event {} for accreditation {}: current status is {}, event is {} -> {}", event.eventId(),
+					event.accreditationId(), current.getStatus(), event.previousStatus(), event.status());
 			return;
 		}
 
@@ -59,11 +56,12 @@ public class AccreditationProjector {
 	}
 
 	/**
-	 * Duplicate: the row already has this status. Stale: the row was updated by a
-	 * newer event (e.g. a replayed creation event after the accreditation was confirmed).
+	 * Applies only if the event was decided on an accredit's current status and the move
+	 * is allowed. Duplicates and replays fail this, since a status is never revisited.
+	 * Order comes from Kafka (same key, same partition)
 	 */
-	private static boolean isAlreadyApplied(Accreditation current, AccreditationEvent event) {
-		return current.getStatus() == event.status() || event.occurredAt().isBefore(current.getUpdatedAt());
+	private static boolean isApplicable(Accreditation current, AccreditationEvent event) {
+		return event.previousStatus() == current.getStatus() && current.getStatus().canTransitionTo(event.status());
 	}
 
 }

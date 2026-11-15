@@ -107,6 +107,7 @@ class AccreditationCommandControllerTest {
 				arguments("content truncated base64", rawRequest("BY_INCOME", "a")),
 				arguments("content bad padding", rawRequest("BY_INCOME", "YQ=x")),
 				arguments("unknown accreditation_type", rawRequest("BY_LUCK", "YQ==")),
+				arguments("numeric accreditation_type", rawRequest("BY_INCOME", "YQ==").replace("\"BY_INCOME\"", "0")),
 				arguments("malformed JSON", "{ not json"));
 	}
 
@@ -164,6 +165,7 @@ class AccreditationCommandControllerTest {
 		return Stream.of(
 				arguments("outcome PENDING", id, "{ \"outcome\": \"PENDING\" }"),
 				arguments("unknown outcome", id, "{ \"outcome\": \"MAYBE\" }"),
+				arguments("numeric outcome", id, "{ \"outcome\": 0 }"),
 				arguments("missing outcome", id, "{}"),
 				arguments("malformed JSON", id, "{ not json"),
 				arguments("id not a UUID", "not-a-uuid", "{ \"outcome\": \"CONFIRMED\" }"));

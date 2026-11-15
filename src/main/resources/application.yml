@@ -5,6 +5,9 @@ spring:
     property-naming-strategy: SNAKE_CASE
     deserialization:
       fail-on-unknown-properties: true
+    datatype:
+      enum:
+        fail-on-numbers-for-enums: true
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:accredit}
     username: ${DB_USERNAME:accredit}
