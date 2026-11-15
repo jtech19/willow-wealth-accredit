@@ -153,11 +153,11 @@ POST / PUT / expiry job ──> check MySQL ──> Kafka ──> projector ─�
   - If the two get out of sync, inserts fail at runtime.
 - **Command side decides, projector records:**
   - The admin endpoints validate the request and status rules before publishing an event. Nothing is published if validation fails.
-  - The projector trusts published events and applies them to MySQL without re-checking the rules; othwrwise a valid event might be rejected due to timing.
+  - The projector trusts published events and applies them to MySQL without re-checking the rules; otherwise a valid event might be rejected due to timing.
 - **Document is validated, not stored:** the `document` in the create request is validated but not stored or put on the event. The spec only requires events to capture the state change and timestamp. In PROD the file would go to object storage (e.g. S3), with the event carrying a reference to it.
 - **Document checks:** `name`, `mime_type` and `content` are required,
   - `content` must be valid base64 of at most 10 MB
-    - The content isn't checked against the mime type, since the spec example doesn't decodes to a real PDF.
+    - The content isn't checked against the mime type, since the spec example doesn't decode to a real PDF.
   - `mime_type` must be:
     - `application/pdf`
     - `image/png`
