@@ -192,3 +192,14 @@ POST / PUT / expiry job ──> check MySQL ──> Kafka ──> projector ─�
 - **Concurrent admin updates:** checks read the lagging read model, so two requests a few ms apart can both pass (e.g. two PENDING for one user). Fix outlined in [b)](#b-concurrent-admin-updates).
 - **Expiry job runs on every instance:** with several instances, each would publish the same EXPIRED events. The projector ignores the duplicates, but the audit log gets them. In PROD a lock such as ShedLock would make it run once per schedule.
 - **Expiry loads all matches at once:** fine for this volume; in PROD it would page through them (e.g. 500 at a time) to keep memory and run time bounded.
+
+## AI usage
+
+For this code test I made use of Claude AI. I used it to:
+  - clarify requirements from the interview spec sheet
+  - verify high-level plan of how to split the work in feature branches where each deliverable is clear & understandable
+  - generation of boilerplate code (like DTOs)
+  - ensure at least 80-85% coverage of unit tests & IT tests
+  - draft the README based on assumptions I made & limitations I had due to time constraints & nature of this exercise being a code test
+One of the main points is that I drove the design decisions, after researching & reviewing the options & took decisions balancing time, scope of this service & readiness for future proofing 
+It was also useful for weighing trade-offs, such as the CQRS consistency gaps and error-handling options, before committing to an approach.
