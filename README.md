@@ -188,8 +188,8 @@ POST / PUT / expiry job ──> check MySQL ──> Kafka ──> projector ─�
 - **No dead-letter topic:** an event the projector can't apply (malformed, or still failing after 2 retries) is logged and skipped so it can't block the partition. In PROD it would go to a dead-letter topic, with an alert, for investigation and replay.
 - **Synchronous Kafka publishing:** admin requests block until Kafka acknowledges the event. This was the quickest reliable option for this exercise, since the admin only gets a success response once the event is safely stored.
   - Quick fix: enable Java 21 virtual threads (`spring.threads.virtual.enabled: true`)
-  - More scalable fix: the transactional outbox from [b)](#b-concurrent-admin-updates)
-- **Concurrent admin updates:** checks read the lagging read model, so two requests a few ms apart can both pass (e.g. two PENDING for one user). Fix outlined in [b)](#b-concurrent-admin-updates).
+  - More scalable fix: the transactional outbox from [Concurrent admin updates](#b-concurrent-admin-updates)
+- **Concurrent admin updates:** checks read the lagging read model, so two requests a few ms apart can both pass (e.g. two PENDING for one user). Fix outlined in [Concurrent admin updates](#b-concurrent-admin-updates).
 - **Expiry job runs on every instance:** with several instances, each would publish the same EXPIRED events. The projector ignores the duplicates, but the audit log gets them. In PROD a lock such as ShedLock would make it run once per schedule.
 - **Expiry loads all matches at once:** fine for this volume; in PROD it would page through them (e.g. 500 at a time) to keep memory and run time bounded.
 
