@@ -73,6 +73,7 @@ With tests:
   - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`
   - `KAFKA_BOOTSTRAP_SERVERS`
   - `ENV` (default: `dev`)
+  - `EXPIRY_CRON` (default: hourly, `0 0 * * * *`)
 
 ---
 
@@ -102,6 +103,7 @@ With tests:
   - Kafka down is `503` (safe to retry)
   - Unexpected is `500` (details only in logs)
   - Extends `ResponseEntityExceptionHandler` so Spring's own errors (`405`, `415`...) keep their status
+- **Expiry runs hourly:** CONFIRMED accreditations last updated more than 30 days ago are expired through the same command path as an admin PUT, so each gets an EXPIRED event. A failure is logged; the accreditation is still CONFIRMED, so the next run picks it up again.
 - **Events ignore unknown fields:** unlike the REST API, the Kafka consumer accepts events with extra fields, so a new event field doesn't break older consumers.
 
 ## Limitations
@@ -122,3 +124,5 @@ With tests:
   - A `user_accreditations` aggregate with `@Version`: stops two requests from both passing the check.
   - A transactional outbox: the event is saved in the same transaction as the aggregate, so the two can't drift apart.
   - Kafka keyed by `userId`: keeps each user's events in order.
+- **Expiry job runs on every instance:** with several instances, each would publish the same EXPIRED events. The projector ignores the duplicates, but the audit log gets them. In PROD a lock such as ShedLock would make it run once per schedule.
+- **Expiry loads all matches at once:** fine for this volume; in PROD it would page through them (e.g. 500 at a time) to keep memory and run time bounded.
