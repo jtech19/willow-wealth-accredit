@@ -42,6 +42,9 @@ accredit:
       name: ${ENV:dev}.willow-wealth.${spring.application.name}.accreditation-events.v1
       partitions: 3
       replicas: 1                # single local broker; 3 in production
+  expiry:
+    max-age: 30d
+    cron: ${EXPIRY_CRON:0 0 * * * *}   # hourly, at minute 0
 
 server:
   port: 9999
