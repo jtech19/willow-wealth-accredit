@@ -95,6 +95,8 @@ With tests:
 - **Timestamps in UTC:** Hibernate stores and reads timestamps in UTC, so the 30-day expiry doesn't depend on the host's timezone.
 - **Unknown user returns an empty map:** there's no user registry, so `GET /user/{userId}/accreditation` returns `200` with empty `accreditation_statuses` rather than `404`.
 - **GET is eventually consistent:** it reads the projected read model, so a change made by an admin shows up once the projector has applied the event (normally milliseconds).
+- **Finalize returns `200 OK`:** with the same `accreditation_id` body as create. 
+  - `PENDING` isn't a valid `outcome` (`400`), an unknown id is `404`, and a transition the rules don't allow (e.g. from `FAILED`) is `409`.
 
 ## Limitations
 
@@ -110,7 +112,7 @@ With tests:
 - **Synchronous Kafka publishing:** admin requests block until Kafka acknowledges the event. This was the quickest reliable option for this exercise, since the admin only gets a success response once the event is safely stored.
   - Quick fix: enable Java 21 virtual threads (`spring.threads.virtual.enabled: true`)
   - More scalable fix: the transactional outbox pattern. The event is saved to a DB table in the same transaction, and a relay publishes it to Kafka asynchronously.
-- **Duplicate PENDING race condition:** the "one PENDING per user" check reads the read model, which lags behind until the projector applies the event. Two creates for the same user a few ms apart could both pass. The proper fix is a command-side write model:
+- **Duplicate PENDING race condition:** the "one PENDING per user" check reads the read model, which lags behind until the projector applies the event. Two creates for the same user a few ms apart could both pass. Finalize has the same gap: two outcomes for one accreditation (e.g. CONFIRMED and FAILED) could both be accepted, and a PUT sent right after the POST may get a `404`. The proper fix is a command-side write model:
   - A `user_accreditations` aggregate with `@Version`: stops two requests from both passing the check.
   - A transactional outbox: the event is saved in the same transaction as the aggregate, so the two can't drift apart.
   - Kafka keyed by `userId`: keeps each user's events in order.

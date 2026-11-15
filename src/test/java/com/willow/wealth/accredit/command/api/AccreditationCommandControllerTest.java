@@ -1,20 +1,30 @@
 package com.willow.wealth.accredit.command.api;
 
 import static com.willow.wealth.accredit.domain.AccreditationType.BY_INCOME;
+import static com.willow.wealth.accredit.command.api.AccreditationOutcome.FAILED;
+import static com.willow.wealth.accredit.domain.AccreditationStatus.CONFIRMED;
 import static com.willow.wealth.accredit.fixtures.CreateAccreditationRequestTestBuilder.aCreateRequest;
+import static com.willow.wealth.accredit.fixtures.FinalizeAccreditationRequestTestBuilder.aFinalizeRequest;
 import static com.willow.wealth.accredit.fixtures.TestData.ACCREDITATION_ID;
 import static com.willow.wealth.accredit.fixtures.TestData.USER_ID;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.stream.Stream;
 
+import com.willow.wealth.accredit.command.handler.AccreditationNotFoundException;
 import com.willow.wealth.accredit.command.handler.CreateAccreditationHandler;
+import com.willow.wealth.accredit.command.handler.FinalizeAccreditationHandler;
 import com.willow.wealth.accredit.command.handler.PendingAccreditationExistsException;
+import com.willow.wealth.accredit.domain.AccreditationStatus;
+import com.willow.wealth.accredit.domain.InvalidStatusTransitionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -40,6 +50,9 @@ class AccreditationCommandControllerTest {
 
 	@MockitoBean
 	private CreateAccreditationHandler createHandler;
+
+	@MockitoBean
+	private FinalizeAccreditationHandler finalizeHandler;
 
 	@Test
 	void createReturns201WithAccreditationId() throws Exception {
@@ -105,6 +118,61 @@ class AccreditationCommandControllerTest {
 				  "document": { "name": "a.pdf", "mime_type": "application/pdf", "content": "%s" }
 				}
 				""".formatted(USER_ID, accreditationType, content);
+	}
+
+	@Test
+	void finalizeReturns200WithAccreditationId() throws Exception {
+		putFinalize(ACCREDITATION_ID.toString(), jsonMapper.writeValueAsString(aFinalizeRequest().build()))
+			.andExpect(status().isOk())
+			.andExpect(content().json("""
+					{ "accreditation_id": "%s" }
+					""".formatted(ACCREDITATION_ID), JsonCompareMode.STRICT));
+
+		verify(finalizeHandler).finalizeAccreditation(ACCREDITATION_ID, CONFIRMED);
+	}
+
+	@Test
+	void finalizeReturns404WhenAccreditationUnknown() throws Exception {
+		willThrow(new AccreditationNotFoundException(ACCREDITATION_ID))
+			.given(finalizeHandler).finalizeAccreditation(ACCREDITATION_ID, CONFIRMED);
+
+		putFinalize(ACCREDITATION_ID.toString(), jsonMapper.writeValueAsString(aFinalizeRequest().build()))
+			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void finalizeReturns409WhenTransitionNotAllowed() throws Exception {
+		willThrow(new InvalidStatusTransitionException(AccreditationStatus.CONFIRMED, AccreditationStatus.FAILED))
+			.given(finalizeHandler).finalizeAccreditation(ACCREDITATION_ID, AccreditationStatus.FAILED);
+
+		putFinalize(ACCREDITATION_ID.toString(),
+				jsonMapper.writeValueAsString(aFinalizeRequest().withOutcome(FAILED).build()))
+			.andExpect(status().isConflict());
+	}
+
+	@ParameterizedTest(name = "{0}")
+	@MethodSource("invalidFinalizeRequests")
+	void invalidFinalizeRequestIsRejectedWith400(String description, String accreditationId, String body)
+			throws Exception {
+		putFinalize(accreditationId, body).andExpect(status().isBadRequest());
+
+		verifyNoInteractions(finalizeHandler);
+	}
+
+	static Stream<Arguments> invalidFinalizeRequests() {
+		String id = ACCREDITATION_ID.toString();
+		return Stream.of(
+				arguments("outcome PENDING", id, "{ \"outcome\": \"PENDING\" }"),
+				arguments("unknown outcome", id, "{ \"outcome\": \"MAYBE\" }"),
+				arguments("missing outcome", id, "{}"),
+				arguments("malformed JSON", id, "{ not json"),
+				arguments("id not a UUID", "not-a-uuid", "{ \"outcome\": \"CONFIRMED\" }"));
+	}
+
+	private ResultActions putFinalize(String accreditationId, String body) throws Exception {
+		return mockMvc.perform(put("/user/accreditation/{id}", accreditationId)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(body));
 	}
 
 	private ResultActions postCreate(String body) throws Exception {
