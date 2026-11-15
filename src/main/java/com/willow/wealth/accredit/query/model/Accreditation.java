@@ -11,6 +11,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -18,6 +19,7 @@ import org.hibernate.type.SqlTypes;
  * Read model (query side): the current state of one accreditation.
  * Only written by the Kafka projector; everything else reads it.
  */
+@Getter
 @Entity
 @Table(name = "accreditation_status")
 public class Accreditation {
@@ -71,30 +73,6 @@ public class Accreditation {
 	public void applyStatus(AccreditationStatus newStatus, Instant changedAt) {
 		this.status = newStatus;
 		this.updatedAt = changedAt;
-	}
-
-	public UUID getAccreditationId() {
-		return accreditationId;
-	}
-
-	public String getUserId() {
-		return userId;
-	}
-
-	public AccreditationType getAccreditationType() {
-		return accreditationType;
-	}
-
-	public AccreditationStatus getStatus() {
-		return status;
-	}
-
-	public Instant getCreatedAt() {
-		return createdAt;
-	}
-
-	public Instant getUpdatedAt() {
-		return updatedAt;
 	}
 
 }

@@ -1,10 +1,7 @@
 package com.willow.wealth.accredit.query.projection;
 
-import static com.willow.wealth.accredit.domain.AccreditationStatus.CONFIRMED;
 import static com.willow.wealth.accredit.domain.AccreditationStatus.PENDING;
 import static com.willow.wealth.accredit.fixtures.AccreditationEventTestBuilder.aCreatedEvent;
-import static com.willow.wealth.accredit.fixtures.AccreditationEventTestBuilder.aStatusChangedEvent;
-import static com.willow.wealth.accredit.fixtures.TestData.hoursLater;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -13,7 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.willow.wealth.accredit.TestcontainersConfiguration;
+import com.willow.wealth.accredit.BaseIntegrationTest;
 import com.willow.wealth.accredit.config.AccreditKafkaProperties;
 import com.willow.wealth.accredit.domain.AccreditationStatus;
 import com.willow.wealth.accredit.event.AccreditationEventPublisher;
@@ -26,12 +23,12 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.kafka.autoconfigure.KafkaConnectionDetails;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 
-/** End to end: publish to real Kafka, wait for the listener to project into real MySQL. */
-@SpringBootTest
-@Import(TestcontainersConfiguration.class)
+/**
+ * Projector edge cases against real Kafka and MySQL. The normal flow is covered end to end
+ * by {@code AccreditationFlowIntegrationTest}.
+ */
+@BaseIntegrationTest
 class AccreditationEventListenerIntegrationTest {
 
 	private static final Duration TIMEOUT = Duration.ofSeconds(20);
@@ -47,17 +44,6 @@ class AccreditationEventListenerIntegrationTest {
 
 	@Autowired
 	private KafkaConnectionDetails connectionDetails;
-
-	@Test
-	void publishedEventsAreProjectedIntoReadModel() {
-		UUID id = UUID.randomUUID();
-
-		publisher.publish(aCreatedEvent().forAccreditation(id).build());
-		awaitStatus(id, PENDING);
-
-		publisher.publish(aStatusChangedEvent().forAccreditation(id).to(CONFIRMED).occurredAt(hoursLater(1)).build());
-		awaitStatus(id, CONFIRMED);
-	}
 
 	@Test
 	void malformedMessageIsSkippedAndDoesNotBlockLaterEvents() throws Exception {

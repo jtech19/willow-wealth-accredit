@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.willow.wealth.accredit.TestcontainersConfiguration;
+import com.willow.wealth.accredit.BaseIntegrationTest;
 import com.willow.wealth.accredit.config.AccreditKafkaProperties;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -25,14 +25,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.kafka.autoconfigure.KafkaConnectionDetails;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /** Publishes to a real Kafka broker and reads the raw record back. */
-@SpringBootTest
-@Import(TestcontainersConfiguration.class)
+@BaseIntegrationTest
 class AccreditationEventPublisherIntegrationTest {
 
 	@Autowired
